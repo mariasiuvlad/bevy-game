@@ -1,6 +1,7 @@
 pub mod monkey {
     use bevy::prelude::*;
     use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+    use bevy_rapier3d::prelude::*;
     use std::ops::Add;
 
     #[derive(Component)]
@@ -43,6 +44,9 @@ pub mod monkey {
             Player,
             Speed(2.0),
             AnimationState(AnimationStates::Idle),
+            RigidBody::Dynamic,
+            Collider::ball(0.5),
+            Restitution::coefficient(0.7),
             SceneBundle {
                 scene: my_gltf,
                 transform: Transform::from_xyz(0.0, 0.0, 0.0),

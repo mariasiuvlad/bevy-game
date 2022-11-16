@@ -2,12 +2,14 @@ mod monkey;
 
 use bevy::prelude::*;
 use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_rapier3d::prelude::*;
 use monkey::monkey::MonkeyPlugin;
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.4, 0.2, 0.2)))
         .add_plugins(DefaultPlugins)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup)
         .add_plugin(MonkeyPlugin)
@@ -34,4 +36,10 @@ fn setup(mut commands: Commands) {
         },
         ..default()
     });
+
+    /* Create the ground. */
+    commands
+        .spawn(())
+        .insert(Collider::cuboid(100.0, 0.1, 100.0))
+        .insert(TransformBundle::from(Transform::from_xyz(0.0, -1.0, 0.0)));
 }

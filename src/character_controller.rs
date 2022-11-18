@@ -46,7 +46,6 @@ pub struct CharacterControllerPlugin;
 impl Plugin for CharacterControllerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(handle_input)
-            // .add_system(input_to_force_based_movement)
             .add_system(input_to_velocity_based_movement)
             .add_system(cursor_grab_system)
             .add_system(move_camera);
@@ -151,7 +150,7 @@ fn move_camera(
         for mut camera_transform in camera_query.iter_mut() {
             camera_transform.translation = character_transform.translation
                 + character_transform.forward() * 20.0
-                + character_transform.local_y() * 10.0;
+                + character_transform.local_y() * 20.0;
             camera_transform.look_at(character_transform.translation, Vec3::Y);
         }
     }

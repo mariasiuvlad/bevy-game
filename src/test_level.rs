@@ -40,7 +40,7 @@ pub fn setup_test_level(
 
     /* Create pillars */
     commands.spawn((
-        Collider::cuboid(5., 5., 5.),
+        Collider::cuboid(2.5, 2.5, 2.5),
         PbrBundle {
             material: materials.add(StandardMaterial {
                 base_color: Color::Rgba {
@@ -59,7 +59,7 @@ pub fn setup_test_level(
         },
     ));
     commands.spawn((
-        Collider::cuboid(5., 5., 5.),
+        Collider::cuboid(2.5, 2.5, 2.5),
         PbrBundle {
             material: materials.add(StandardMaterial {
                 base_color: Color::Rgba {
@@ -78,7 +78,7 @@ pub fn setup_test_level(
         },
     ));
     commands.spawn((
-        Collider::cuboid(5., 5., 5.),
+        Collider::cuboid(2.5, 2.5, 2.5),
         PbrBundle {
             material: materials.add(StandardMaterial {
                 base_color: Color::Rgba {
@@ -97,7 +97,7 @@ pub fn setup_test_level(
         },
     ));
     commands.spawn((
-        Collider::cuboid(5., 5., 5.),
+        Collider::cuboid(2.5, 2.5, 2.5),
         PbrBundle {
             material: materials.add(StandardMaterial {
                 base_color: Color::Rgba {

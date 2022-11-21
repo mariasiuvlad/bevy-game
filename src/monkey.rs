@@ -7,7 +7,7 @@ use crate::character_controller::CharacterController;
 struct Player;
 
 #[derive(Resource)]
-struct Animations(Vec<Handle<AnimationClip>>);
+pub struct Animations(pub Vec<Handle<AnimationClip>>);
 
 pub struct MonkeyPlugin;
 
@@ -25,13 +25,12 @@ fn spawn_monkey(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn((
         Player,
         RigidBody::Dynamic,
-        ExternalImpulse::default(),
-        ExternalForce::default(),
         Velocity {
             linvel: Vec3::ZERO,
             angvel: Vec3::ZERO,
         },
-        Collider::cuboid(0.5, 0.5, 0.5),
+        GravityScale(3.0),
+        Collider::cuboid(1.5, 1.0, 1.5),
         LockedAxes::ROTATION_LOCKED,
         CharacterController::default(),
         SceneBundle {

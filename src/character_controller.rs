@@ -1,4 +1,4 @@
-use crate::input_map::InputMap;
+use crate::{input_map::InputMap, monkey::Animations};
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::prelude::*;
 
@@ -33,7 +33,7 @@ impl Default for CharacterController {
             fly: false,
             walk_speed: 10.0,
             run_speed: 8.0,
-            jump_speed: 6.0,
+            jump_speed: 15.0,
             velocity: Vec3::ZERO,
             jumping: false,
             input_state: InputState::default(),
@@ -45,10 +45,12 @@ pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(handle_input)
+        app.add_startup_system(setup_cursor_grab)
+            .add_system(handle_input)
             .add_system(input_to_velocity_based_movement)
             .add_system(cursor_grab_system)
-            .add_system(move_camera);
+            .add_system(move_camera)
+            .add_system(mouse_button_input);
     }
 }
 
@@ -128,6 +130,12 @@ pub fn input_to_velocity_based_movement(
     }
 }
 
+fn setup_cursor_grab(mut windows: ResMut<Windows>) {
+    let window = windows.get_primary_mut().unwrap();
+    window.set_cursor_grab_mode(bevy::window::CursorGrabMode::Locked);
+    window.set_cursor_visibility(false);
+}
+
 fn cursor_grab_system(mut windows: ResMut<Windows>, key: Res<Input<KeyCode>>) {
     let window = windows.get_primary_mut().unwrap();
 
@@ -150,8 +158,23 @@ fn move_camera(
         for mut camera_transform in camera_query.iter_mut() {
             camera_transform.translation = character_transform.translation
                 + character_transform.forward() * 20.0
-                + character_transform.local_y() * 20.0;
-            camera_transform.look_at(character_transform.translation, Vec3::Y);
+                + character_transform.local_y() * 10.0;
+            camera_transform.look_at(
+                character_transform.translation - character_transform.forward() * 10.0,
+                Vec3::Y,
+            );
+        }
+    }
+}
+
+fn mouse_button_input(
+    buttons: Res<Input<MouseButton>>,
+    animations: Res<Animations>,
+    mut animation_players: Query<&mut AnimationPlayer>,
+) {
+    for mut animation_player in animation_players.iter_mut() {
+        if buttons.just_pressed(MouseButton::Left) {
+            animation_player.start(animations.0[0].clone_weak());
         }
     }
 }

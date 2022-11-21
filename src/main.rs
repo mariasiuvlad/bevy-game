@@ -15,7 +15,7 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.4, 0.2, 0.2)))
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        // .add_plugin(RapierDebugRenderPlugin::default()) // causes crash with bevy 0.9
+        .add_plugin(RapierDebugRenderPlugin::default()) // causes crash with bevy 0.9
         .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup_camera)
         .add_startup_system(setup_test_level)
@@ -26,11 +26,5 @@ fn main() {
 
 fn setup_camera(mut commands: Commands) {
     // camera
-    commands.spawn(Camera3dBundle {
-        camera: Camera {
-            hdr: true,
-            ..default()
-        },
-        ..default()
-    });
+    commands.spawn(Camera3dBundle::default());
 }

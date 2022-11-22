@@ -1,45 +1,48 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-pub fn setup_test_level(
+pub fn setup_level(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
+    commands.spawn((
+        PointLightBundle {
+            point_light: PointLight {
+                intensity: 1500.0,
+                shadows_enabled: true,
+                ..default()
+            },
+            transform: Transform::from_xyz(20.0, 10.0, 20.0),
             ..default()
         },
-        transform: Transform::from_xyz(20.0, 10.0, 20.0),
-        ..default()
-    });
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
+        Name::from("Light #1"),
+    ));
+    commands.spawn((
+        Name::from("Light #2"),
+        PointLightBundle {
+            point_light: PointLight {
+                intensity: 1500.0,
+                shadows_enabled: true,
+                ..default()
+            },
+            transform: Transform::from_xyz(-20.0, 10.0, 20.0),
             ..default()
         },
-        transform: Transform::from_xyz(-20.0, 10.0, 20.0),
-        ..default()
-    });
+    ));
 
     /* Create the ground. */
-    let ground_mesh = meshes.add(shape::Plane { size: 50. }.into());
     commands.spawn((
-        Collider::cuboid(100.0, 0.1, 100.0),
+        Name::from("Ground"),
+        Collider::cuboid(25.0, 0.2, 25.0),
         RigidBody::Fixed,
-        PbrBundle {
-            mesh: ground_mesh,
-            transform: Transform::from_xyz(0.0, -1.0, 0.0),
-            ..default()
-        },
+        TransformBundle::from_transform(Transform::from_xyz(0.0, -1.0, 0.0)),
     ));
 
     /* Create pillars */
     commands.spawn((
+        Name::from("Pillar #1"),
         Collider::cuboid(2.5, 2.5, 2.5),
         PbrBundle {
             material: materials.add(StandardMaterial {
@@ -54,11 +57,12 @@ pub fn setup_test_level(
                 ..default()
             }),
             mesh: meshes.add(shape::Cube { size: 5. }.into()),
-            transform: Transform::from_xyz(20., 0., 20.),
+            transform: Transform::from_xyz(20., 1., 20.),
             ..default()
         },
     ));
     commands.spawn((
+        Name::from("Pillar #2"),
         Collider::cuboid(2.5, 2.5, 2.5),
         PbrBundle {
             material: materials.add(StandardMaterial {
@@ -73,11 +77,12 @@ pub fn setup_test_level(
                 ..default()
             }),
             mesh: meshes.add(shape::Cube { size: 5. }.into()),
-            transform: Transform::from_xyz(-20., 0., 20.),
+            transform: Transform::from_xyz(-20., 1.25, 20.),
             ..default()
         },
     ));
     commands.spawn((
+        Name::from("Pillar #3"),
         Collider::cuboid(2.5, 2.5, 2.5),
         PbrBundle {
             material: materials.add(StandardMaterial {
@@ -92,11 +97,12 @@ pub fn setup_test_level(
                 ..default()
             }),
             mesh: meshes.add(shape::Cube { size: 5. }.into()),
-            transform: Transform::from_xyz(20., 0., -20.),
+            transform: Transform::from_xyz(20., 1.25, -20.),
             ..default()
         },
     ));
     commands.spawn((
+        Name::from("Pillar #4"),
         Collider::cuboid(2.5, 2.5, 2.5),
         PbrBundle {
             material: materials.add(StandardMaterial {
@@ -111,7 +117,7 @@ pub fn setup_test_level(
                 ..default()
             }),
             mesh: meshes.add(shape::Cube { size: 5. }.into()),
-            transform: Transform::from_xyz(-20., 0., -20.),
+            transform: Transform::from_xyz(-20., 1.25, -20.),
             ..default()
         },
     ));

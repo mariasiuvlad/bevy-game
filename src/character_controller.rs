@@ -15,28 +15,24 @@ pub struct InputState {
 }
 
 #[derive(Component, Debug)]
-pub struct CharacterController {
+pub struct CharacterInput {
     pub input_map: InputMap,
     pub fly: bool,
     pub walk_speed: f32,
     pub run_speed: f32,
     pub jump_speed: f32,
-    pub velocity: Vec3,
-    pub jumping: bool,
     pub input_state: InputState,
 }
 
-impl Default for CharacterController {
+impl Default for CharacterInput {
     fn default() -> Self {
         Self {
             input_map: InputMap::default(),
-            fly: false,
-            walk_speed: 10.0,
-            run_speed: 8.0,
-            jump_speed: 15.0,
-            velocity: Vec3::ZERO,
-            jumping: false,
             input_state: InputState::default(),
+            fly: false,
+            walk_speed: 5.0,
+            run_speed: 9.0,
+            jump_speed: 6.0,
         }
     }
 }
@@ -47,7 +43,8 @@ impl Plugin for CharacterControllerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup_cursor_grab)
             .add_system(handle_input)
-            .add_system(input_to_velocity_based_movement)
+            .add_system(input_to_controller_based_movement)
+            .add_system(input_to_turning)
             .add_system(cursor_grab_system)
             .add_system(move_camera)
             .add_system(mouse_button_input);
@@ -57,7 +54,7 @@ impl Plugin for CharacterControllerPlugin {
 pub fn handle_input(
     _time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut controller_query: Query<&mut CharacterController>,
+    mut controller_query: Query<&mut CharacterInput>,
 ) {
     for mut controller in controller_query.iter_mut() {
         if keyboard_input.just_pressed(controller.input_map.key_fly) {
@@ -90,43 +87,66 @@ pub fn handle_input(
     }
 }
 
-pub fn input_to_velocity_based_movement(
-    mut mouse_motion_events: EventReader<MouseMotion>,
-    mut controller_query: Query<(&Transform, &mut CharacterController, &mut Velocity)>,
+pub fn input_to_controller_based_movement(
+    time: Res<Time>,
+    mut controller_query: Query<(
+        &Transform,
+        &mut CharacterInput,
+        &mut KinematicCharacterController,
+        &mut Velocity,
+        &KinematicCharacterControllerOutput,
+    )>,
 ) {
-    for (transform, mut controller, mut velocity) in controller_query.iter_mut() {
-        let mut vertical_velocity = velocity.linvel.y;
+    for (transform, mut input, mut kinematic_controller, mut velocity, output) in
+        controller_query.iter_mut()
+    {
+        let mut translation = Vec3::ZERO;
+        let is_grounded = output.grounded;
 
-        if controller.input_state.jump {
-            vertical_velocity = controller.jump_speed;
-        }
-
-        let mut final_velocity = Vec3::ZERO;
-        if controller.input_state.forward {
-            final_velocity += -transform.forward() * controller.walk_speed;
-        }
-        if controller.input_state.backward {
-            final_velocity += transform.forward() * controller.walk_speed;
-        }
-        if controller.input_state.right {
-            final_velocity += -transform.local_x() * controller.walk_speed;
-        }
-        if controller.input_state.left {
-            final_velocity += transform.local_x() * controller.walk_speed;
+        if input.input_state.jump && is_grounded {
+            let mut jump_force = transform.local_y() * input.jump_speed;
+            if input.input_state.forward {
+                jump_force += -transform.forward() * input.walk_speed;
+            }
+            velocity.linvel += jump_force;
         }
 
-        velocity.linvel = Vec3::new(final_velocity.x, vertical_velocity, final_velocity.z);
+        if input.input_state.forward && is_grounded {
+            translation += -transform.forward();
+        }
+        if input.input_state.backward && is_grounded {
+            translation += transform.forward();
+        }
+        if input.input_state.right && is_grounded {
+            translation += -transform.local_x();
+        }
+        if input.input_state.left && is_grounded {
+            translation += transform.local_x();
+        }
 
+        kinematic_controller.translation = if is_grounded {
+            Some(translation * input.walk_speed * time.delta_seconds())
+        } else {
+            Some(Vec3::ZERO)
+        };
+
+        input.input_state = InputState::default();
+    }
+}
+
+fn input_to_turning(
+    mut mouse_motion_events: EventReader<MouseMotion>,
+    mut controller_query: Query<(&mut Velocity, &CharacterInput)>,
+) {
+    for (mut velocity, mut _controller) in controller_query.iter_mut() {
         let mut delta = Vec2::ZERO;
         for motion in mouse_motion_events.iter() {
             // NOTE: -= to invert
             delta -= motion.delta;
         }
 
-        let angvel = Vec3::new(0., delta.x / 2., 0.);
+        let angvel = Vec3::new(0., delta.x.clamp(-10., 10.), 0.);
         velocity.angvel = angvel;
-
-        controller.input_state = InputState::default();
     }
 }
 
@@ -151,16 +171,16 @@ fn cursor_grab_system(mut windows: ResMut<Windows>, key: Res<Input<KeyCode>>) {
 }
 
 fn move_camera(
-    character_query: Query<&Transform, With<CharacterController>>,
-    mut camera_query: Query<&mut Transform, (With<Camera>, Without<CharacterController>)>,
+    character_query: Query<&Transform, With<CharacterInput>>,
+    mut camera_query: Query<&mut Transform, (With<Camera>, Without<CharacterInput>)>,
 ) {
     for character_transform in character_query.iter() {
         for mut camera_transform in camera_query.iter_mut() {
             camera_transform.translation = character_transform.translation
-                + character_transform.forward() * 20.0
-                + character_transform.local_y() * 10.0;
+                + character_transform.forward() * 5.0
+                + character_transform.local_y() * 2.5;
             camera_transform.look_at(
-                character_transform.translation - character_transform.forward() * 10.0,
+                character_transform.translation - character_transform.forward() * 5.0,
                 Vec3::Y,
             );
         }

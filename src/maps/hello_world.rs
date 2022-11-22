@@ -1,11 +1,28 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
+use crate::loading::AssetsLoading;
+
 pub fn setup_level(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    loading: Res<AssetsLoading>,
 ) {
+    let stairs_mesh: Handle<Mesh> = loading.0[1].clone().typed::<Mesh>();
+    let stairs_collider = Collider::from_bevy_mesh(
+        &meshes.get(&stairs_mesh).unwrap(),
+        &ComputedColliderShape::TriMesh,
+    )
+    .unwrap();
+
+    /* Create stairs */
+    commands.spawn((
+        Name::from("Stairs"),
+        stairs_collider,
+        TransformBundle::from(Transform::from_xyz(5.0, 0.0, 0.0)),
+    ));
+
     // light
     commands.spawn((
         PointLightBundle {

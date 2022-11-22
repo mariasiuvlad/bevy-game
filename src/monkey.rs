@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::character_controller::CharacterInput;
+use crate::{character_controller::CharacterInput, AppState};
 
 #[derive(Component)]
 struct Player;
@@ -13,7 +13,7 @@ pub struct MonkeyPlugin;
 
 impl Plugin for MonkeyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_monkey);
+        app.add_system_set(SystemSet::on_enter(AppState::InGame).with_system(spawn_monkey));
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{input_map::InputMap, monkey::Animations};
+use crate::{input_map::InputMap, monkey::Animations, AppState};
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::prelude::*;
 
@@ -41,13 +41,16 @@ pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup_cursor_grab)
-            .add_system(handle_input)
-            .add_system(input_to_controller_based_movement)
-            .add_system(input_to_turning)
-            .add_system(cursor_grab_system)
-            .add_system(move_camera)
-            .add_system(mouse_button_input);
+        app.add_system_set(SystemSet::on_enter(AppState::InGame).with_system(setup_cursor_grab))
+            .add_system_set(
+                SystemSet::on_update(AppState::InGame)
+                    .with_system(handle_input)
+                    .with_system(input_to_controller_based_movement)
+                    .with_system(input_to_turning)
+                    .with_system(cursor_grab_system)
+                    .with_system(move_camera)
+                    .with_system(mouse_button_input),
+            );
     }
 }
 

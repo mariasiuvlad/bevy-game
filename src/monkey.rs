@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::character_controller::CharacterController;
+use crate::character_controller::CharacterInput;
 
 #[derive(Component)]
 struct Player;
@@ -23,19 +23,21 @@ fn spawn_monkey(mut commands: Commands, assets: Res<AssetServer>) {
         assets.load("monkey_warrior.glb#Animation0")
     ]));
     commands.spawn((
+        Name::from("Monkey Warrior"),
         Player,
         RigidBody::Dynamic,
-        Velocity {
-            linvel: Vec3::ZERO,
-            angvel: Vec3::ZERO,
+        CharacterInput::default(),
+        Velocity::default(),
+        KinematicCharacterController {
+            snap_to_ground: Some(CharacterLength::Absolute(0.5)),
+            ..default()
         },
-        GravityScale(3.0),
-        Collider::cuboid(1.5, 1.0, 1.5),
+        KinematicCharacterControllerOutput::default(),
         LockedAxes::ROTATION_LOCKED,
-        CharacterController::default(),
+        Collider::cuboid(0.5, 1.5, 0.5),
         SceneBundle {
             scene: monkey_model,
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::ONE * 0.25),
             ..Default::default()
         },
     ));

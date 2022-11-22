@@ -28,13 +28,10 @@ fn spawn_monkey(mut commands: Commands, assets: Res<AssetServer>) {
         RigidBody::Dynamic,
         CharacterInput::default(),
         Velocity::default(),
-        KinematicCharacterController {
-            snap_to_ground: Some(CharacterLength::Absolute(0.5)),
-            ..default()
-        },
+        KinematicCharacterController::default(),
         KinematicCharacterControllerOutput::default(),
         LockedAxes::ROTATION_LOCKED,
-        Collider::cuboid(0.5, 1.5, 0.5),
+        Collider::capsule(Vec3::new(0.0, 0.5, 0.0), Vec3::new(0.0, 1.5, 0.0), 0.5),
         SceneBundle {
             scene: monkey_model,
             transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::ONE * 0.25),

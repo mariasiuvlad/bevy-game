@@ -2,18 +2,20 @@ use crate::AppState;
 use bevy::prelude::*;
 
 #[derive(Resource, Default)]
-pub struct AssetsLoading(Vec<HandleUntyped>);
+pub struct AssetsLoading(pub Vec<HandleUntyped>);
 
 pub fn load_assets(server: Res<AssetServer>, mut loading: ResMut<AssetsLoading>) {
     // we can have different asset types
     let character_model: Handle<Scene> = server.load("monkey_warrior.glb#Scene0");
+    let stairs_mesh: Handle<Mesh> = server.load("stairs.glb#Mesh0/Primitive0");
 
     // add them all to our collection for tracking
     loading.0.push(character_model.clone_untyped());
+    loading.0.push(stairs_mesh.clone_untyped());
 }
 
 pub fn check_assets_ready(
-    mut commands: Commands,
+    mut _commands: Commands,
     server: Res<AssetServer>,
     loading: Res<AssetsLoading>,
     mut app_state: ResMut<State<AppState>>,
@@ -31,7 +33,7 @@ pub fn check_assets_ready(
             app_state.set(AppState::InGame).unwrap();
 
             // remove the resource to drop the tracking handles
-            commands.remove_resource::<AssetsLoading>();
+            // commands.remove_resource::<AssetsLoading>();
             // (note: if you don't have any other handles to the assets
             // elsewhere, they will get unloaded after this)
         }

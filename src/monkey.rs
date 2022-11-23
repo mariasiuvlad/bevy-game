@@ -1,7 +1,11 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::{character_controller::CharacterInput, AppState};
+use crate::{
+    character_controller::{CharacterInput, InputState},
+    input_map::InputMap,
+    AppState,
+};
 
 #[derive(Component)]
 struct Player;
@@ -27,9 +31,12 @@ fn spawn_monkey(mut commands: Commands, assets: Res<AssetServer>) {
         Player,
         RigidBody::Dynamic,
         CharacterInput::default(),
-        Velocity::default(),
-        KinematicCharacterController::default(),
-        KinematicCharacterControllerOutput::default(),
+        InputMap::default(),
+        InputState::default(),
+        Velocity {
+            linvel: Vec3::ZERO,
+            angvel: Vec3::ZERO,
+        },
         LockedAxes::ROTATION_LOCKED,
         Collider::capsule(Vec3::new(0.0, 0.5, 0.0), Vec3::new(0.0, 1.5, 0.0), 0.5),
         SceneBundle {

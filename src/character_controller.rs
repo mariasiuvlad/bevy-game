@@ -2,7 +2,7 @@ use crate::{input_map::InputMap, monkey::Animations, AppState};
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::prelude::*;
 
-#[derive(Debug, Default)]
+#[derive(Component, Debug, Default)]
 pub struct InputState {
     pub forward: bool,
     pub backward: bool,
@@ -45,7 +45,7 @@ impl Plugin for CharacterControllerPlugin {
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
                     .with_system(handle_input)
-                    .with_system(input_to_controller_based_movement)
+                    .with_system(input_to_movement)
                     .with_system(input_to_turning)
                     .with_system(cursor_grab_system)
                     .with_system(move_camera)
@@ -55,93 +55,69 @@ impl Plugin for CharacterControllerPlugin {
 }
 
 pub fn handle_input(
-    _time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut controller_query: Query<&mut CharacterInput>,
+    mut input_query: Query<(&mut InputState, &InputMap)>,
 ) {
-    for mut controller in controller_query.iter_mut() {
-        if keyboard_input.just_pressed(controller.input_map.key_fly) {
-            controller.fly = !controller.fly;
+    for (mut input_state, input_map) in input_query.iter_mut() {
+        if keyboard_input.pressed(input_map.key_forward) {
+            input_state.forward = true;
         }
-        if keyboard_input.pressed(controller.input_map.key_forward) {
-            controller.input_state.forward = true;
+        if keyboard_input.pressed(input_map.key_backward) {
+            input_state.backward = true;
         }
-        if keyboard_input.pressed(controller.input_map.key_backward) {
-            controller.input_state.backward = true;
+        if keyboard_input.pressed(input_map.key_right) {
+            input_state.right = true;
         }
-        if keyboard_input.pressed(controller.input_map.key_right) {
-            controller.input_state.right = true;
+        if keyboard_input.pressed(input_map.key_left) {
+            input_state.left = true;
         }
-        if keyboard_input.pressed(controller.input_map.key_left) {
-            controller.input_state.left = true;
+        if keyboard_input.pressed(input_map.key_run) {
+            input_state.run = true;
         }
-        if keyboard_input.pressed(controller.input_map.key_run) {
-            controller.input_state.run = true;
+        if keyboard_input.just_pressed(input_map.key_jump) {
+            input_state.jump = true;
         }
-        if keyboard_input.just_pressed(controller.input_map.key_jump) {
-            controller.input_state.jump = true;
+        if keyboard_input.pressed(input_map.key_fly_up) {
+            input_state.up = true;
         }
-        if keyboard_input.pressed(controller.input_map.key_fly_up) {
-            controller.input_state.up = true;
-        }
-        if keyboard_input.pressed(controller.input_map.key_fly_down) {
-            controller.input_state.down = true;
+        if keyboard_input.pressed(input_map.key_fly_down) {
+            input_state.down = true;
         }
     }
 }
 
-pub fn input_to_controller_based_movement(
-    time: Res<Time>,
-    mut controller_query: Query<(
-        &Transform,
-        &mut CharacterInput,
-        &mut KinematicCharacterController,
-        &mut Velocity,
-        &KinematicCharacterControllerOutput,
-    )>,
-) {
-    for (transform, mut input, mut kinematic_controller, mut velocity, output) in
-        controller_query.iter_mut()
-    {
-        let mut translation = Vec3::ZERO;
-        let is_grounded = output.grounded;
+pub fn input_to_movement(mut character: Query<(&Transform, &mut Velocity, &mut InputState)>) {
+    for (transform, mut velocity, mut input_state) in character.iter_mut() {
+        let mut final_linvel = Vec3::ZERO;
 
-        if input.input_state.jump && is_grounded {
-            let mut jump_force = transform.local_y() * input.jump_speed;
-            if input.input_state.forward {
-                jump_force += -transform.forward() * input.walk_speed;
-            }
-            velocity.linvel += jump_force;
+        if input_state.forward {
+            final_linvel += -transform.forward();
+        }
+        if input_state.backward {
+            final_linvel += transform.forward();
+        }
+        if input_state.right {
+            final_linvel += -transform.local_x();
+        }
+        if input_state.left {
+            final_linvel += transform.local_x();
+        }
+        if input_state.jump {
+            final_linvel += transform.local_y() * 5.0;
         }
 
-        if input.input_state.forward && is_grounded {
-            translation += -transform.forward();
-        }
-        if input.input_state.backward && is_grounded {
-            translation += transform.forward();
-        }
-        if input.input_state.right && is_grounded {
-            translation += -transform.local_x();
-        }
-        if input.input_state.left && is_grounded {
-            translation += transform.local_x();
-        }
+        final_linvel *= 8.0;
 
-        kinematic_controller.translation = if is_grounded {
-            Some(translation * input.walk_speed * time.delta_seconds())
-        } else {
-            Some(Vec3::ZERO)
-        };
-
-        input.input_state = InputState::default();
+        velocity.linvel += Vec3::new(final_linvel.x, 0.0, final_linvel.y);
+        *input_state = InputState::default();
     }
 }
 
 fn input_to_turning(
     mut mouse_motion_events: EventReader<MouseMotion>,
-    mut controller_query: Query<(&mut Velocity, &CharacterInput)>,
+    mut controller_query: Query<&mut Velocity, With<InputState>>,
 ) {
-    for (mut velocity, mut _controller) in controller_query.iter_mut() {
+    for mut velocity in controller_query.iter_mut() {
         let mut delta = Vec2::ZERO;
         for motion in mouse_motion_events.iter() {
             // NOTE: -= to invert

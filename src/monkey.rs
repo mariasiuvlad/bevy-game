@@ -22,7 +22,7 @@ impl Plugin for MonkeyPlugin {
 }
 
 fn spawn_monkey(mut commands: Commands, assets: Res<AssetServer>) {
-    let monkey_model = assets.load("monkey_warrior.glb#Scene0");
+    let _monkey_model: Handle<Scene> = assets.load("monkey_warrior.glb#Scene0");
     commands.insert_resource(Animations(vec![
         assets.load("monkey_warrior.glb#Animation0")
     ]));
@@ -33,16 +33,20 @@ fn spawn_monkey(mut commands: Commands, assets: Res<AssetServer>) {
         CharacterInput::default(),
         InputMap::default(),
         InputState::default(),
+        GravityScale(1.),
         Velocity {
             linvel: Vec3::ZERO,
             angvel: Vec3::ZERO,
         },
-        LockedAxes::ROTATION_LOCKED,
-        Collider::capsule(Vec3::new(0.0, 0.5, 0.0), Vec3::new(0.0, 1.5, 0.0), 0.5),
-        SceneBundle {
-            scene: monkey_model,
-            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::ONE * 0.25),
-            ..Default::default()
-        },
+        ExternalForce::default(),
+        ExternalImpulse::default(),
+        LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z,
+        Collider::capsule(Vec3::ZERO, Vec3::new(0., 0.25, 0.), 0.125),
+        TransformBundle::from_transform(Transform::from_xyz(0.0, 0.0, 0.0)),
+        // SceneBundle {
+        //     scene: _monkey_model,
+        //     // transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::ONE * 0.25),
+        //     ..Default::default()
+        // },
     ));
 }

@@ -8,10 +8,12 @@ pub fn load_assets(server: Res<AssetServer>, mut loading: ResMut<AssetsLoading>)
     // we can have different asset types
     let character_model: Handle<Scene> = server.load("monkey_warrior.glb#Scene0");
     let stairs_mesh: Handle<Mesh> = server.load("stairs.glb#Mesh0/Primitive0");
+    let hello_world_level: Handle<Scene> = server.load("hello_world.glb#Mesh0/Primitive0");
 
     // add them all to our collection for tracking
     loading.0.push(character_model.clone_untyped());
     loading.0.push(stairs_mesh.clone_untyped());
+    loading.0.push(hello_world_level.clone_untyped());
 }
 
 pub fn check_assets_ready(

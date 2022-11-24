@@ -10,18 +10,17 @@ pub fn setup_level(
     loading: Res<AssetsLoading>,
 ) {
     let stairs_mesh: Handle<Mesh> = loading.0[1].clone().typed::<Mesh>();
+    let level_mesh: Handle<Mesh> = loading.0[2].clone().typed::<Mesh>();
     let stairs_collider = Collider::from_bevy_mesh(
         &meshes.get(&stairs_mesh).unwrap(),
         &ComputedColliderShape::TriMesh,
     )
     .unwrap();
-
-    /* Create stairs */
-    commands.spawn((
-        Name::from("Stairs"),
-        stairs_collider,
-        TransformBundle::from(Transform::from_xyz(5.0, 0.0, 0.0)),
-    ));
+    let level_collider = Collider::from_bevy_mesh(
+        &meshes.get(&level_mesh).unwrap(),
+        &ComputedColliderShape::TriMesh,
+    )
+    .unwrap();
 
     // light
     commands.spawn((
@@ -47,6 +46,29 @@ pub fn setup_level(
             transform: Transform::from_xyz(-20.0, 10.0, 20.0),
             ..default()
         },
+    ));
+
+    // commands.spawn((
+    //     Name::from("Hello World"),
+    //     level_collider,
+    //     TransformBundle::from(
+    //         Transform::from_xyz(0.0, -5.0, 0.0).with_scale(Vec3::new(10., 0.05, 10.)),
+    //     ),
+    // ));
+
+    /* Create companion cube */
+    commands.spawn((
+        RigidBody::Dynamic,
+        Name::from("Companion Cube"),
+        Collider::cuboid(0.2, 0.2, 0.2),
+        TransformBundle::from_transform(Transform::from_xyz(-5.0, 0.0, 0.0)),
+    ));
+
+    /* Create stairs */
+    commands.spawn((
+        Name::from("Stairs"),
+        stairs_collider,
+        TransformBundle::from(Transform::from_xyz(5.0, 0.0, 0.0)),
     ));
 
     /* Create the ground. */

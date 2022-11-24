@@ -2,6 +2,10 @@ use crate::{input_map::InputMap, monkey::Animations, AppState};
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::prelude::*;
 
+const MAX_SPEED: f32 = 5.;
+const _ACCELERATION: f32 = 200.;
+const _MAX_ACCEL_FORCE: f32 = 150.;
+
 #[derive(Component, Debug, Default)]
 pub struct InputState {
     pub forward: bool,
@@ -46,6 +50,7 @@ impl Plugin for CharacterControllerPlugin {
                 SystemSet::on_update(AppState::InGame)
                     .with_system(handle_input)
                     .with_system(input_to_movement)
+                    .with_system(floating)
                     .with_system(input_to_turning)
                     .with_system(cursor_grab_system)
                     .with_system(move_camera)
@@ -86,8 +91,10 @@ pub fn handle_input(
     }
 }
 
-pub fn input_to_movement(mut character: Query<(&Transform, &mut Velocity, &mut InputState)>) {
-    for (transform, mut velocity, mut input_state) in character.iter_mut() {
+pub fn input_to_movement(
+    mut character: Query<(&Transform, &Velocity, &mut ExternalForce, &mut InputState)>,
+) {
+    for (transform, velocity, mut force, mut input_state) in character.iter_mut() {
         let mut final_linvel = Vec3::ZERO;
 
         if input_state.forward {
@@ -102,14 +109,63 @@ pub fn input_to_movement(mut character: Query<(&Transform, &mut Velocity, &mut I
         if input_state.left {
             final_linvel += transform.local_x();
         }
+
+        final_linvel = final_linvel.normalize_or_zero();
+
+        let mut goal_linvel = final_linvel * MAX_SPEED;
+        goal_linvel.y = velocity.linvel.y;
+
+        let needed = goal_linvel - velocity.linvel;
+
         if input_state.jump {
-            final_linvel += transform.local_y() * 5.0;
+            force.force.y += 20.0;
         }
 
-        final_linvel *= 8.0;
+        force.force.x = needed.x;
+        force.force.z = needed.z;
 
-        velocity.linvel += Vec3::new(final_linvel.x, 0.0, final_linvel.y);
         *input_state = InputState::default();
+    }
+}
+
+fn floating(
+    rapier_context: Res<RapierContext>,
+    mut character: Query<(
+        Entity,
+        &Transform,
+        &Velocity,
+        &mut ExternalForce,
+        &InputState,
+    )>,
+) {
+    for (entity, transform, velocity, mut force, input_state) in character.iter_mut() {
+        let ray_dir = Vec3::NEG_Y;
+        let ride_height: f32 = 0.75;
+        let max_toi = 1.5;
+        let solid = true;
+
+        let _spring_strength = 10.;
+        let _spring_damper = 1.;
+
+        let filter = QueryFilter {
+            exclude_collider: Some(entity),
+            ..default()
+        };
+        let ray_origin = transform.translation;
+        if !input_state.jump {
+            if let Some((_, toi)) =
+                rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
+            {
+                let distance = ray_dir * toi;
+                let delta = ride_height - distance.y.abs();
+                let spring_force =
+                    (delta * _spring_strength) - (velocity.linvel.y * _spring_damper);
+
+                force.force.y = spring_force;
+            } else {
+                force.force.y = 0.;
+            }
+        }
     }
 }
 
@@ -157,7 +213,7 @@ fn move_camera(
         for mut camera_transform in camera_query.iter_mut() {
             camera_transform.translation = character_transform.translation
                 + character_transform.forward() * 5.0
-                + character_transform.local_y() * 2.5;
+                + character_transform.local_y();
             camera_transform.look_at(
                 character_transform.translation - character_transform.forward() * 5.0,
                 Vec3::Y,
@@ -174,6 +230,39 @@ fn mouse_button_input(
     for mut animation_player in animation_players.iter_mut() {
         if buttons.just_pressed(MouseButton::Left) {
             animation_player.start(animations.0[0].clone_weak());
+        }
+    }
+}
+
+/* Cast a ray inside of a system. */
+fn cast_downward_ray(
+    rapier_context: Res<RapierContext>,
+    mut characters: Query<(Entity, &Name, &Transform, &mut ExternalForce), With<InputState>>,
+) {
+    let ray_dir = Vec3::NEG_Y;
+    let ride_height: f32 = 1.;
+    let max_toi = 4.0;
+    let solid = true;
+
+    for (entity, name, transform, mut force) in characters.iter_mut() {
+        let filter = QueryFilter {
+            exclude_collider: Some(entity),
+            ..default()
+        };
+        let ray_origin = transform.translation;
+        if let Some((entity, toi)) =
+            rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
+        {
+            // The first collider hit has the entity `entity` and it hit after
+            // the ray travelled a distance equal to `ray_dir * toi`.
+            let hit_point = ray_origin + ray_dir * toi;
+            let distance = ray_dir * toi;
+            let spring_force = Vec3::Y * (ride_height - distance.y.abs()) * 0.5;
+            println!(
+                "Entity {:?} hit at point {} with a distance of {} generating a spring force of {} - {}",
+                entity, hit_point, distance, spring_force, name
+            );
+            force.force = spring_force;
         }
     }
 }

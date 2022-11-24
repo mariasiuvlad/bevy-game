@@ -16,7 +16,7 @@ pub fn setup_level(
         &ComputedColliderShape::TriMesh,
     )
     .unwrap();
-    let level_collider = Collider::from_bevy_mesh(
+    let _level_collider = Collider::from_bevy_mesh(
         &meshes.get(&level_mesh).unwrap(),
         &ComputedColliderShape::TriMesh,
     )

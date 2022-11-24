@@ -233,36 +233,3 @@ fn mouse_button_input(
         }
     }
 }
-
-/* Cast a ray inside of a system. */
-fn cast_downward_ray(
-    rapier_context: Res<RapierContext>,
-    mut characters: Query<(Entity, &Name, &Transform, &mut ExternalForce), With<InputState>>,
-) {
-    let ray_dir = Vec3::NEG_Y;
-    let ride_height: f32 = 1.;
-    let max_toi = 4.0;
-    let solid = true;
-
-    for (entity, name, transform, mut force) in characters.iter_mut() {
-        let filter = QueryFilter {
-            exclude_collider: Some(entity),
-            ..default()
-        };
-        let ray_origin = transform.translation;
-        if let Some((entity, toi)) =
-            rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
-        {
-            // The first collider hit has the entity `entity` and it hit after
-            // the ray travelled a distance equal to `ray_dir * toi`.
-            let hit_point = ray_origin + ray_dir * toi;
-            let distance = ray_dir * toi;
-            let spring_force = Vec3::Y * (ride_height - distance.y.abs()) * 0.5;
-            println!(
-                "Entity {:?} hit at point {} with a distance of {} generating a spring force of {} - {}",
-                entity, hit_point, distance, spring_force, name
-            );
-            force.force = spring_force;
-        }
-    }
-}

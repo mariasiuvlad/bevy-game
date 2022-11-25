@@ -130,15 +130,9 @@ pub fn input_to_movement(
 
 fn floating(
     rapier_context: Res<RapierContext>,
-    mut character: Query<(
-        Entity,
-        &Transform,
-        &Velocity,
-        &mut ExternalForce,
-        &InputState,
-    )>,
+    mut character: Query<(Entity, &Transform, &Velocity, &mut ExternalForce)>,
 ) {
-    for (entity, transform, velocity, mut force, input_state) in character.iter_mut() {
+    for (entity, transform, velocity, mut force) in character.iter_mut() {
         let ray_dir = Vec3::NEG_Y;
         let ride_height: f32 = 0.75;
         let max_toi = 1.5;
@@ -152,19 +146,15 @@ fn floating(
             ..default()
         };
         let ray_origin = transform.translation;
-        if !input_state.jump {
-            if let Some((_, toi)) =
-                rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
-            {
-                let distance = ray_dir * toi;
-                let delta = ride_height - distance.y.abs();
-                let spring_force =
-                    (delta * _spring_strength) - (velocity.linvel.y * _spring_damper);
+        if let Some((_, toi)) = rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
+        {
+            let distance = ray_dir * toi;
+            let delta = ride_height - distance.y.abs();
+            let spring_force = (delta * _spring_strength) - (velocity.linvel.y * _spring_damper);
 
-                force.force.y = spring_force;
-            } else {
-                force.force.y = 0.;
-            }
+            force.force.y = spring_force;
+        } else {
+            force.force.y = 0.;
         }
     }
 }
